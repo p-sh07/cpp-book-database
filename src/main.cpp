@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <print>
+#include <iostream>
 
 #include "book_database.hpp"
 #include "comparators.hpp"
@@ -8,6 +10,7 @@
 using namespace bookdb;
 
 int main() {
+    Book book("Dostoevsky", "Hello", 2029, "Fiction", 4.2, 1234);
     //
     // Ниже приведён пример работы `BookDatabase`.
     //
@@ -20,9 +23,9 @@ int main() {
     // Create a book database
     BookDatabase<std::vector<Book>> db;
 
-    /*
 
-    Код закомментирован, чтобы не приводить к ошибке компиляции
+
+    //Код закомментирован, чтобы не приводить к ошибке компиляции
 
     // Add some books
     db.EmplaceBack("1984", "George Orwell", 1949, Genre::SciFi, 4., 190);
@@ -44,6 +47,7 @@ int main() {
     std::sort(db.begin(), db.end(), comp::LessByPopularity{});
     std::print("Books sorted by popularity: {}\n\n==================\n", db);
 
+    /*
     // Author histogram
     auto histogram = buildAuthorHistogramFlat(db);
     std::print("Author histogram: {}", histogram);

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.30)
+cmake_minimum_required(VERSION 3.28)
 project(BookDB VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 26)
@@ -10,8 +10,9 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     # Все предупреждения - это ошибки
     add_compile_options(-Wfatal-errors -Wall -Werror)
 
-    # Не больше одной ошибки за раз
-    add_compile_options(-fmax-errors=1)
+    ### Не больше одной ошибки за раз -> ! не работает с llvm:
+    # "clang++: fatal error: argument unused during compilation: '-fmax-errors=1' [-Wunused-command-line-argument]"
+    #  add_compile_options(-fmax-errors=1)
 endif()
 
 # Ищем необходимые библиотеки
@@ -28,6 +29,7 @@ target_include_directories(${PROJECT_NAME}_imp PUBLIC
     ${OPENSSL_INCLUDE_DIR}
     ${Boost_INCLUDE_DIRS}
 )
+
 target_link_libraries(${PROJECT_NAME}_imp PRIVATE ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES})
 
 # Создаём исполняемый таргет и линкуем к нему статическую библиотеку
@@ -41,7 +43,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_imp)
 # Рекурсивно ищем все используемые в тестах .cpp файлы
 file(GLOB TEST_SRC_FILES "${CMAKE_SOURCE_DIR}/tests/*.cpp")
 
-add_executable(${PROJECT_NAME}_tests "${TEST_SRC_FILES}")
+add_executable(${PROJECT_NAME}_tests "${TEST_SRC_FILES}"
+        tests/book_test.cpp)
 target_link_libraries(${PROJECT_NAME}_tests PRIVATE ${PROJECT_NAME}_imp GTest::GTest GTest::Main)
 target_include_directories(${PROJECT_NAME}_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
