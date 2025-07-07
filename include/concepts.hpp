@@ -7,33 +7,51 @@
 
 namespace bookdb {
 
+//Book must have field 'author' which is a string or string_view
+//Can add other required fields if needed
 template <typename T>
-concept BookContainerLike = requires(T const& t) {
-    //Must have iterator?
-    typename T::iterator;
-
-    //stores books?
-    // std::is_same_v<Book, typename T::value_type>();
+concept IsBook = requires(T const& b) {
+    requires std::same_as<std::remove_cvref_t<decltype(b.author)>, std::string_view>
+        || std::same_as<std::remove_cvref_t<decltype(b.author)>, std::string>;
 };
 
-
 template <typename T>
-concept BookIterator = requires(T const& t) {
-    //is iterator
+concept BookIterator = requires(T const &t) {
+    // is iterator
     typename std::iterator_traits<T>::iterator_category;
 
-    //has books
-    std::is_same_v<Book, typename std::iterator_traits<T>::value_type>();
+    // has books
+    IsBook<typename std::iterator_traits<T>::value_type>;
 };
 
-//TODO:
-template <typename S, typename I>
-concept BookSentinel = true;
+template <typename T>
+concept BookContainerLike = requires(T const &c) {
+    // Must have iterators pointing to a BookType and support begin/end
+    requires BookIterator<decltype(c.begin())>;
+    requires BookIterator<decltype(c.end())>;
 
-template <typename P>
-concept BookPredicate = true;
+    // can get size
+    { c.size() } noexcept -> std::same_as<std::size_t>;
+};
+
+template <typename S, typename I>
+concept BookSentinel = std::sentinel_for<S, I> && BookIterator<I>;
+
+//TODO: replace "Book" with a BookType concept somehow?
+template <typename P /*,typename BookType*/> //-> adding this makes BookPredicate require to specify explicit template parameters in code
+concept BookPredicate = /*IsBook<BookType> && */requires(P pred, const Book& book_type) {
+    //Accepts a book type
+    IsBook<decltype(book_type)>;
+
+    //takes a book object and returns bool
+    { pred(book_type) } -> std::convertible_to<bool>;
+};
 
 template <typename C>
-concept BookComparator = true;
+concept BookComparator = requires(C comp, const Book& lhs, const Book& rhs) {
+    IsBook<decltype(lhs)>;
+    IsBook<decltype(rhs)>;
+    { comp(lhs, rhs) } -> std::convertible_to<bool>;
+};
 
 }  // namespace bookdb

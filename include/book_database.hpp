@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <ranges>
 #include <print>
 #include <span>
 #include <string>
@@ -13,6 +14,7 @@
 #include "heterogeneous_lookup.hpp"
 
 namespace bookdb {
+namespace rg = std::ranges;
 
 template <BookContainerLike BookContainer = std::vector<Book>>
 class BookDatabase {
@@ -24,18 +26,20 @@ public:
     using ConstIterator = typename BookContainer::const_iterator;
     using Size = typename BookContainer::size_type;
 
-    using Books = std::span<Book>;
+    using Books = std::span<const Book>;
     using Authors = const AuthorContainer&;
 
     //use this or force bookdb::Book?
-    //using BookType = typename BookContainer::value_type;
-    using BookType = Book;
+    using BookType = typename BookContainer::value_type;
+    // using BookType = Book;
 
     BookDatabase() = default;
-    BookDatabase(std::initializer_list<Book> books) {
+    BookDatabase(std::initializer_list<BookType> books) {
+        // std::println("1.starting construct");
         //book stores Author as string_view, assume that it has access to
         //sv data at the moment of DB construction
-        std::for_each(books, [](auto& book) {
+        rg::for_each(books, [&](auto& book) {
+            // std::println(" 2.iterating for each");
             PushBack(book);
         });
     }
@@ -54,9 +58,10 @@ public:
     ConstIterator end() const { return books_.end(); }
 
     //==== Op's =====
-    BookType &operator[](size_t index) noexcept { return books_[index]; }
+    BookType& operator[](size_t index) noexcept { return books_[index]; }
+    const BookType& operator[](size_t index) const noexcept { return books_[index]; }
 
-    // TODO?
+    // TODO: any others? Check in concept that bookcontainer supports operator[]? not required in task, but useful
 
     //==== Get =====
     // TODO: "Добавьте методы .. для _безопасного_ просмотра внутреннего состояния контейнера." - const only?
@@ -71,12 +76,15 @@ public:
     Size size() const { return books_.size(); }
 
     void PushBack(BookType book) {
+        // std::println(" 3.in pb");
         books_.push_back(std::move(book));
+
+        // std::println(" 4.going to athor name");
         StoreAuthorNameString(books_.back());
     }
 
-    void PushBack(std::span<Book> books) {
-        std::for_each(books, [&](const BookType& book) {
+    void PushBack(std::span<BookType> books) {
+        rg::for_each(books, [&](const BookType& book) {
             PushBack(book);
         });
     }
@@ -93,16 +101,11 @@ private:
     BookContainer books_;
     AuthorContainer authors_;
 
-    [[maybe_unused]] bool StoreAuthorNameString(BookType& book_ref) {
-        try {
-            auto [author_it, success] = authors_.emplace(book_ref.author);
+    void StoreAuthorNameString(BookType& book_ref) {
+        auto [author_it, success] = authors_.emplace(book_ref.author);
 
-            //replace s_view in book to new one, pointing to string in authors_
-            book_ref.author = *author_it;
-            return true;
-        } catch (std::exception& ex) {
-            return false;
-        }
+        //replace s_view in book to new one, pointing to string in authors_
+        book_ref.author = *author_it;
     }
 };
 
@@ -113,21 +116,20 @@ template <>
 struct formatter<bookdb::BookDatabase<std::vector<bookdb::Book>>> {
     template <typename FormatContext>
     auto format(const bookdb::BookDatabase<std::vector<bookdb::Book>> &db, FormatContext &fc) const {
+        format_to(fc.out(), "[BookDatabase (size = {})]\n", db.size());
 
-        // Раскомментируйте, когда bookdb::BookDatabase поддержит интерфейсы, доступные стандартным контейнерам
-        //(size/begin/...)
-
-        format_to(fc.out(), "BookDatabase (size = {}): ", db.size());
-
-        format_to(fc.out(), "Books:\n");
+        size_t n = 1;
         for (const auto &book : db.GetBooks()) {
-            format_to(fc.out(), "- {}\n", book);
+            format_to(fc.out(), " {}. {}\n", n++, book);
         }
 
-        format_to(fc.out(), "Authors:\n");
-        for (const auto &author : db.GetAuthors()) {
-            format_to(fc.out(), "- {}\n", author);
-        }
+        //No need to always print all authors?
+        // format_to(fc.out(), "Authors:\n");
+        // n = 1;
+        // for (const auto &author : db.GetAuthors()) {
+        //     format_to(fc.out(), " {}. {}\n", n++, author);
+        // }
+        //Get output like: "Books sorted by ...(sorted); Authors ...(random order);" - looks messy
 
         return fc.out();
     }

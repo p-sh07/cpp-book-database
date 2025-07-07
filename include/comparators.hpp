@@ -28,10 +28,24 @@ struct LessByRating {
     }
 };
 
+struct GreaterByRating {
+    bool operator()(const Book& lhs, const Book& rhs) const {
+        return lhs.rating > rhs.rating;
+    }
+};
+
+//Least read first
 struct LessByPopularity {
     bool operator()(const Book& lhs, const Book& rhs) const {
         //NB: Less popular == less read_count
         return lhs.read_count < rhs.read_count;
+    }
+};
+
+//Most read first
+struct GreaterByPopularity {
+    bool operator()(const Book& lhs, const Book& rhs) const {
+        return lhs.read_count > rhs.read_count;
     }
 };
 

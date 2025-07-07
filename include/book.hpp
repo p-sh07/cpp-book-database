@@ -74,7 +74,7 @@ struct formatter<bookdb::Book, char> {
     auto format(const bookdb::Book& book, FormatContext& fc) const {
         return format_to(
             fc.out(),
-            "Book: \"{}\" by {} ({}), Genre: {}, Rating: {} [read {} times]",
+            "\"{}\" by {} ({}), {}, Rating: {:.2f} [read {} times]",
             book.title, book.author, book.year, book.genre, book.rating, book.read_count
         );
     }
