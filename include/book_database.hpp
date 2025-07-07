@@ -1,11 +1,9 @@
 #pragma once
 
 #include <algorithm>
-#include <print>
 #include <ranges>
 #include <span>
 #include <string>
-#include <string_view>
 #include <unordered_set>
 #include <vector>
 
@@ -64,30 +62,21 @@ public:
     // TODO: any others? Check in concept that bookcontainer supports operator[]? not required in task, but useful
 
     //==== Get =====
-    // TODO: "Добавьте методы .. для _безопасного_ просмотра внутреннего состояния контейнера." - const only?
-
-    // BookContainer &GetBooks() { return books_; }
-    // AuthorContainer &GetAuthors() { return authors_; }
-
     Books GetBooks() const { return books_; }
     Authors GetAuthors() const { return authors_; }
 
     //==== Standard Functions ====
     Size size() const { return books_.size(); }
-
     void PushBack(BookType book) {
-        // std::println(" 3.in pb");
         books_.push_back(std::move(book));
-
-        // std::println(" 4.going to athor name");
         StoreAuthorNameString(books_.back());
     }
 
+    //TODO: span or init list or iterators?
     void PushBack(std::span<BookType> books) {
         rg::for_each(books, [&](const BookType &book) { PushBack(book); });
     }
 
-    // Works, but doesn't allow to store author name string in authors_ easily
     template <typename... BookArgs>
     BookType &EmplaceBack(BookArgs &&...book_args) {
         auto &book_ref = books_.emplace_back(std::forward<BookArgs>(book_args)...);
