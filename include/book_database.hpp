@@ -1,8 +1,8 @@
 #pragma once
 
 #include <algorithm>
-#include <ranges>
 #include <print>
+#include <ranges>
 #include <span>
 #include <string>
 #include <string_view>
@@ -27,18 +27,18 @@ public:
     using Size = typename BookContainer::size_type;
 
     using Books = std::span<const Book>;
-    using Authors = const AuthorContainer&;
+    using Authors = const AuthorContainer &;
 
-    //use this or force bookdb::Book?
+    // use this or force bookdb::Book?
     using BookType = typename BookContainer::value_type;
     // using BookType = Book;
 
     BookDatabase() = default;
     BookDatabase(std::initializer_list<BookType> books) {
         // std::println("1.starting construct");
-        //book stores Author as string_view, assume that it has access to
-        //sv data at the moment of DB construction
-        rg::for_each(books, [&](auto& book) {
+        // book stores Author as string_view, assume that it has access to
+        // sv data at the moment of DB construction
+        rg::for_each(books, [&](auto &book) {
             // std::println(" 2.iterating for each");
             PushBack(book);
         });
@@ -58,8 +58,8 @@ public:
     ConstIterator end() const { return books_.end(); }
 
     //==== Op's =====
-    BookType& operator[](size_t index) noexcept { return books_[index]; }
-    const BookType& operator[](size_t index) const noexcept { return books_[index]; }
+    BookType &operator[](size_t index) noexcept { return books_[index]; }
+    const BookType &operator[](size_t index) const noexcept { return books_[index]; }
 
     // TODO: any others? Check in concept that bookcontainer supports operator[]? not required in task, but useful
 
@@ -84,15 +84,13 @@ public:
     }
 
     void PushBack(std::span<BookType> books) {
-        rg::for_each(books, [&](const BookType& book) {
-            PushBack(book);
-        });
+        rg::for_each(books, [&](const BookType &book) { PushBack(book); });
     }
 
-    //Works, but doesn't allow to store author name string in authors_ easily
+    // Works, but doesn't allow to store author name string in authors_ easily
     template <typename... BookArgs>
-    BookType& EmplaceBack(BookArgs &&...book_args) {
-        auto& book_ref = books_.emplace_back(std::forward<BookArgs>(book_args)...);
+    BookType &EmplaceBack(BookArgs &&...book_args) {
+        auto &book_ref = books_.emplace_back(std::forward<BookArgs>(book_args)...);
         StoreAuthorNameString(book_ref);
         return book_ref;
     }
@@ -101,10 +99,10 @@ private:
     BookContainer books_;
     AuthorContainer authors_;
 
-    void StoreAuthorNameString(BookType& book_ref) {
+    void StoreAuthorNameString(BookType &book_ref) {
         auto [author_it, success] = authors_.emplace(book_ref.author);
 
-        //replace s_view in book to new one, pointing to string in authors_
+        // replace s_view in book to new one, pointing to string in authors_
         book_ref.author = *author_it;
     }
 };
@@ -123,13 +121,13 @@ struct formatter<bookdb::BookDatabase<std::vector<bookdb::Book>>> {
             format_to(fc.out(), " {}. {}\n", n++, book);
         }
 
-        //No need to always print all authors?
-        // format_to(fc.out(), "Authors:\n");
-        // n = 1;
-        // for (const auto &author : db.GetAuthors()) {
-        //     format_to(fc.out(), " {}. {}\n", n++, author);
-        // }
-        //Get output like: "Books sorted by ...(sorted); Authors ...(random order);" - looks messy
+        // No need to always print all authors?
+        //  format_to(fc.out(), "Authors:\n");
+        //  n = 1;
+        //  for (const auto &author : db.GetAuthors()) {
+        //      format_to(fc.out(), " {}. {}\n", n++, author);
+        //  }
+        // Get output like: "Books sorted by ...(sorted); Authors ...(random order);" - looks messy
 
         return fc.out();
     }

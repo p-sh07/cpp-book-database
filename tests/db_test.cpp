@@ -5,11 +5,11 @@
 #include <unordered_set>
 
 using std::literals::operator""s;
-using std::literals::operator ""sv;
+using std::literals::operator""sv;
 
-using bookdb::Genre;
 using bookdb::Book;
 using bookdb::BookDatabase;
+using bookdb::Genre;
 
 /*
 *db.EmplaceBack("1984", "George Orwell", 1949, Genre::SciFi, 4., 190);
@@ -26,9 +26,9 @@ db.EmplaceBack("Lord of the Flies", "William Golding", 1954, Genre::Fiction, 4.2
 
 //====== Database construction =======
 TEST(TestConstructors, DbInitializerList) {
-    Book book1 ("1984"s, "George Orwell"sv, 1949, Genre::SciFi, 4., 190);
-    Book book2 ("Animal Farm"s, "George Orwell"sv, 1945, Genre::Fiction, 4.4, 143);
-    Book book3 ("The Great Gatsby"s, "F. Scott Fitzgerald"sv, 1925, Genre::Fiction, 4.5, 120);
+    Book book1("1984"s, "George Orwell"sv, 1949, Genre::SciFi, 4., 190);
+    Book book2("Animal Farm"s, "George Orwell"sv, 1945, Genre::Fiction, 4.4, 143);
+    Book book3("The Great Gatsby"s, "F. Scott Fitzgerald"sv, 1925, Genre::Fiction, 4.5, 120);
 
     BookDatabase db{book1, book2, book3};
 
@@ -49,8 +49,8 @@ TEST(TestAuthorName, AuthorStringStoredInaccessible) {
 
     std::println("author: {}", db.begin()->author);
 
-    //currently, author is still added, but undefined behaviour with string_view
-    //theoretically author prints "123!@#321!#@1", but can differ depending on system
+    // currently, author is still added, but undefined behaviour with string_view
+    // theoretically author prints "123!@#321!#@1", but can differ depending on system
     EXPECT_EQ(db.GetAuthors().size(), 1u);
 }
 
@@ -58,7 +58,7 @@ TEST(TestAuthorName, AuthorStringStoredCorrect) {
     BookDatabase db;
     {
         std::string author_temp_str = "George Orwell";
-        Book book1 ("1984"s, author_temp_str, 1949, Genre::SciFi, 4., 190);
+        Book book1("1984"s, author_temp_str, 1949, Genre::SciFi, 4., 190);
         db.PushBack(book1);
     }
 
@@ -76,48 +76,47 @@ TEST(TestAuthorName, AuthorNameStoredOnce) {
     EXPECT_EQ(db.GetAuthors().size(), 1u);
 }
 
-
 //====== Book construction and insertion =======
-//Testing book construction, push back and emplace for move/copy
-//TODO: add EXPECT_EQ expected counts for move/copy counts
+// Testing book construction, push back and emplace for move/copy
+// TODO: add EXPECT_EQ expected counts for move/copy counts
 struct TestBook {
     TestBook(std::string author) : author(author) {
         std::println(std::cerr, " *Book ctr");
         ++ctr;
     }
 
-    //copy constructor
-    TestBook(TestBook& other) : author(other.author) {
+    // copy constructor
+    TestBook(TestBook &other) : author(other.author) {
         std::println(std::cerr, " *Book COPY ctr");
         ++copy_ctr;
     }
 
-    TestBook(const TestBook& other) : author(other.author) {
+    TestBook(const TestBook &other) : author(other.author) {
         std::println(std::cerr, " *Book C-COPY ctr");
         ++copy_ctr;
     }
 
-    //move constructor
-    TestBook(TestBook&& other) noexcept : author(std::move(other.author)) {
+    // move constructor
+    TestBook(TestBook &&other) noexcept : author(std::move(other.author)) {
         std::println(std::cerr, " =Book MOVE ctr");
         ++move_ctr;
     }
 
-    TestBook& operator=(TestBook& other) {
+    TestBook &operator=(TestBook &other) {
         author = other.author;
         std::println(std::cerr, " **Book COPY ASSIGN");
         ++copy_asgn;
         return *this;
     }
 
-    TestBook& operator=(const TestBook& other) {
+    TestBook &operator=(const TestBook &other) {
         author = other.author;
         std::println(std::cerr, " **Book C-COPY ASSIGN");
         ++copy_asgn;
         return *this;
     }
 
-    TestBook& operator=(TestBook&& other) noexcept {
+    TestBook &operator=(TestBook &&other) noexcept {
         author = std::move(other.author);
         std::println(std::cerr, " ==Book MOVE ASSIGN");
         ++move_asgn;
@@ -132,9 +131,9 @@ struct TestBook {
     unsigned short move_asgn = 0u;
 };
 
-//TODO: test suite TEST_P?
-// class TestConstruction : public testing::Test {
-// protected:
+// TODO: test suite TEST_P?
+//  class TestConstruction : public testing::Test {
+//  protected:
 
 TEST(TestBookCopyMove, InitializerListConstruct) {
     std::println(std::cerr, "->Constructing books");
@@ -143,7 +142,7 @@ TEST(TestBookCopyMove, InitializerListConstruct) {
 
     std::println(std::cerr, "->Constructing DB");
 
-    //TODO: should initializer_list copy/move? or just be a const val ref?
+    // TODO: should initializer_list copy/move? or just be a const val ref?
     BookDatabase<std::vector<TestBook>> db{tb1, tb2};
 }
 
@@ -190,7 +189,7 @@ TEST(TestDb, StatisticsCorrectRatings) {
         {"Animal Farm", "George Orwell", 1945, Genre::Fiction, 4.2, 143},
     };
 
-    //should sort authors alphabetically
+    // should sort authors alphabetically
     auto author_histogram = buildAuthorHistogramFlat(db);
     ASSERT_EQ(author_histogram.size(), 4u);
     EXPECT_EQ(author_histogram.begin()->first, "Aldous Huxley"sv);
@@ -208,14 +207,14 @@ TEST(TestDb, StatisticsCorrectRatings) {
 
 TEST(TestDb, StatisticsCorrectTopNby) {
     BookDatabase db{
-            {"The Great Gatsby", "F. Scott Fitzgerald", 1925, Genre::Fiction, 4.6, 120},
-            {"Brave New World", "Aldous Huxley", 1932, Genre::SciFi, 4.4, 98},
-            {"Pride and Prejudice", "Jane Austen", 1813, Genre::Fiction, 4.7, 178},
-            {"1984", "George Orwell", 1949, Genre::SciFi, 4.5, 190},
-            {"Animal Farm", "George Orwell", 1945, Genre::Fiction, 4.2, 143},
-        };
+        {"The Great Gatsby", "F. Scott Fitzgerald", 1925, Genre::Fiction, 4.6, 120},
+        {"Brave New World", "Aldous Huxley", 1932, Genre::SciFi, 4.4, 98},
+        {"Pride and Prejudice", "Jane Austen", 1813, Genre::Fiction, 4.7, 178},
+        {"1984", "George Orwell", 1949, Genre::SciFi, 4.5, 190},
+        {"Animal Farm", "George Orwell", 1945, Genre::Fiction, 4.2, 143},
+    };
 
-    //Greater rating on top by default
+    // Greater rating on top by default
     auto top_2_rating = getTopNBy(db, 2);
     ASSERT_EQ(top_2_rating.size(), 2u);
 
@@ -245,33 +244,31 @@ TEST(TestDb, SampleBooks) {
         {"Lord of the Flies", "William Golding", 1954, Genre::Fiction, 4.2, 89},
     };
 
-    //Check nbooks > db.size()
+    // Check nbooks > db.size()
     auto book_sample = sampleRandomBooks(db, 15);
     ASSERT_EQ(book_sample.size(), 10u);
 
     book_sample = sampleRandomBooks(db, 1);
     ASSERT_EQ(book_sample.size(), 1u);
 
-    //Chack that sample doesn't contain repeating books
+    // Chack that sample doesn't contain repeating books
     book_sample = sampleRandomBooks(db, 8);
 
     std::unordered_set<std::string_view> book_names;
     for (const auto book : book_sample) {
-        //will be false if book title already exists in set
+        // will be false if book title already exists in set
         EXPECT_TRUE(book_names.insert(book.get().title).second);
     }
 }
 
 //====== Correct filtering =======
 TEST(TestDb, FiltersCorrect) {
-    BookDatabase db{
-        {"The Great Gatsby", "F. Scott Fitzgerald", 1925, Genre::Fiction, 4.6, 120},
-        {"Brave New World", "Aldous Huxley", 1932, Genre::SciFi, 4.5, 98},
-        {"Pride and Prejudice", "Jane Austen", 1813, Genre::Fiction, 4.7, 178}
-    };
+    BookDatabase db{{"The Great Gatsby", "F. Scott Fitzgerald", 1925, Genre::Fiction, 4.6, 120},
+                    {"Brave New World", "Aldous Huxley", 1932, Genre::SciFi, 4.5, 98},
+                    {"Pride and Prejudice", "Jane Austen", 1813, Genre::Fiction, 4.7, 178}};
 
-
-    auto filtered_by_year_and_rating = filterBooks(db.begin(), db.end(), bookdb::YearBetween(1900, 2000), bookdb::RatingAbove(4.5));
+    auto filtered_by_year_and_rating =
+        filterBooks(db.begin(), db.end(), bookdb::YearBetween(1900, 2000), bookdb::RatingAbove(4.5));
     ASSERT_EQ(filtered_by_year_and_rating.size(), 1u);
     EXPECT_EQ(filtered_by_year_and_rating[0].get().title, "The Great Gatsby"sv);
 
@@ -279,7 +276,8 @@ TEST(TestDb, FiltersCorrect) {
     ASSERT_EQ(filtered_by_genre.size(), 1u);
     EXPECT_EQ(filtered_by_genre[0].get().title, "Brave New World"sv);
 
-    auto filtered_any_of = filterBooks(db.begin(), db.end(), bookdb::any_of(bookdb::GenreIs(Genre::SciFi), bookdb::YearBetween(1800, 1900)));
+    auto filtered_any_of = filterBooks(db.begin(), db.end(),
+                                       bookdb::any_of(bookdb::GenreIs(Genre::SciFi), bookdb::YearBetween(1800, 1900)));
     ASSERT_EQ(filtered_any_of.size(), 2u);
     EXPECT_EQ(filtered_any_of[0].get().title, "Brave New World"sv);
 }
