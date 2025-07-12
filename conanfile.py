@@ -26,5 +26,6 @@ class BookDBConan(ConanFile):
     
     def build(self):
         cmake = CMake(self)
+        cmake.definitions["CMAKE_C_FLAGS"] = "-O3 -DNDEBUG"  # Attempt to fix C compiler error in Docker container
         cmake.configure()
         cmake.build()
