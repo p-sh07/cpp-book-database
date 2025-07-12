@@ -28,21 +28,26 @@ auto buildAuthorHistogramFlat(const BookDatabase<T> &db, Comparator comp = {}) {
     return author_counts;
 }
 
-// TODO: не до конца понятно, в чем смысл использования в этих функциях flat_ контейнеров, более эффективный поиск по
-// результатам? Average ratings by genres
+struct GenreInfo {
+    double rating_sum = 0.0;
+    size_t count = 0u;
+
+    double Average() const {
+        return count == 0u
+        ? 0.0
+        : rating_sum / count;
+    }
+};
+
+// Average ratings by genres
 template <BookIterator It>
 auto calculateGenreRatings(It begin, It end) {
-    std::flat_map<Genre, double> genre_ratings;
-    std::flat_map<Genre, size_t> genre_book_count;
+    std::flat_map<Genre, GenreInfo> genre_ratings;
 
     std::for_each(begin, end, [&](const auto &book) {
-        genre_ratings[book.genre] += book.rating;
-        ++genre_book_count[book.genre];
+        genre_ratings[book.genre].rating_sum += book.rating;
+        ++genre_ratings[book.genre].count;
     });
-
-    for (const auto &[genre, count] : genre_book_count) {
-        genre_ratings.at(genre) /= count;
-    }
 
     return genre_ratings;
 }
@@ -60,10 +65,7 @@ double calculateAverageRating(const BookDatabase<T> &db) {
     // https://stackoverflow.com/questions/76796910/why-do-we-have-stdtransform-reduce-in-c-standard-library
     double sum = std::transform_reduce(db.begin(), db.end(), 0.0, std::plus<>(), get_book_rating);
 
-    // could also use:
-    // double sum = rg::fold_left( db | vw::transform(get_book_rating), 0.0, std::plus<>());
-
-    return db.size() == 0u ? 0.0 : sum / (1.0 * db.size());
+    return sum / db.size();
 }
 
 template <BookContainerLike T>
@@ -108,4 +110,16 @@ struct std::formatter<bookdb::BookRefVec, char> {
 
     constexpr auto parse(std::format_parse_context &ctx) { return ctx.begin(); }
 };
+
+template <>
+struct std::formatter<bookdb::GenreInfo, char> {
+    template <typename FormatContext>
+    auto format(const bookdb::GenreInfo &gi, FormatContext &fc) const {
+        format_to(fc.out(), " Avg. rating = {}\n", gi.Average());
+        return fc.out();
+    }
+
+    constexpr auto parse(std::format_parse_context &ctx) { return ctx.begin(); }
+};
+
 }  // namespace std

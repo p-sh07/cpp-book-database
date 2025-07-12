@@ -6,28 +6,37 @@
 #include <string_view>
 
 namespace bookdb {
+namespace rg = std::ranges;
 using std::literals::operator""sv;
 
 enum class Genre { Fiction, NonFiction, SciFi, Biography, Mystery, Unknown };
 
-static constexpr std::array<std::string_view, 6> genre_strings{"Fiction",   "NonFiction", "SciFi",
-                                                               "Biography", "Mystery",    "Unknown"};
+using GenreStringPair = std::pair<Genre, std::string_view>;
+static constexpr std::array<GenreStringPair, 6> genre_strings{
+    {// <- need extra braces: https://stackoverflow.com/questions/27669200/how-should-i-brace-initialize-an-stdarray-of-stdpairs
+        {Genre::Fiction, "Fiction"sv},
+        {Genre::NonFiction, "NonFiction"sv},
+        {Genre::SciFi, "SciFi"sv},
+        {Genre::Biography, "Biography"sv},
+        {Genre::Mystery, "Mystery"sv},
+        {Genre::Unknown, "Unknown"sv},
+    }
+};
 
 constexpr Genre GenreFromString(std::string_view str) {
-    for (size_t i = 0; i < genre_strings.size(); ++i) {
-        if (genre_strings[i] == str) {
-            return static_cast<Genre>(i);
-        }
+    const auto it = rg::find(genre_strings, str, &GenreStringPair::second);
+    if (it == genre_strings.end()) {
+        return Genre::Unknown;
     }
-    return Genre::Unknown;
+    return it->first;
 }
 
 constexpr std::string_view StringFromGenre(Genre genre) {
-    if (auto genre_idx = static_cast<size_t>(genre); genre_idx < genre_strings.size()) {
-        return genre_strings[genre_idx];
+    const auto it = rg::find(genre_strings, genre, &GenreStringPair::first);
+    if (it == genre_strings.end()) {
+        return StringFromGenre(Genre::Unknown);
     }
-    // To prevent errors in case list is expanded or string values changed
-    return genre_strings[static_cast<size_t>(Genre::Unknown)];
+    return it->second;
 }
 
 struct Book {

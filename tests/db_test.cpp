@@ -4,6 +4,7 @@
 
 #include <gtest/gtest.h>
 #include <unordered_set>
+#include <deque>
 
 using std::literals::operator""s;
 using std::literals::operator""sv;
@@ -77,91 +78,6 @@ TEST(TestAuthorName, AuthorNameStoredOnce) {
     EXPECT_EQ(db.GetAuthors().size(), 1u);
 }
 
-//====== Book construction and insertion =======
-// Testing book construction, push back and emplace for move/copy
-// TODO: add EXPECT_EQ expected counts for move/copy counts
-struct TestBook {
-    TestBook(std::string author) : author(author) {
-        std::println(std::cerr, " *Book ctr");
-        ++ctr;
-    }
-
-    // copy constructor
-    TestBook(TestBook &other) : author(other.author) {
-        std::println(std::cerr, " *Book COPY ctr");
-        ++copy_ctr;
-    }
-
-    TestBook(const TestBook &other) : author(other.author) {
-        std::println(std::cerr, " *Book C-COPY ctr");
-        ++copy_ctr;
-    }
-
-    // move constructor
-    TestBook(TestBook &&other) noexcept : author(std::move(other.author)) {
-        std::println(std::cerr, " =Book MOVE ctr");
-        ++move_ctr;
-    }
-
-    TestBook &operator=(TestBook &other) {
-        author = other.author;
-        std::println(std::cerr, " **Book COPY ASSIGN");
-        ++copy_asgn;
-        return *this;
-    }
-
-    TestBook &operator=(const TestBook &other) {
-        author = other.author;
-        std::println(std::cerr, " **Book C-COPY ASSIGN");
-        ++copy_asgn;
-        return *this;
-    }
-
-    TestBook &operator=(TestBook &&other) noexcept {
-        author = std::move(other.author);
-        std::println(std::cerr, " ==Book MOVE ASSIGN");
-        ++move_asgn;
-        return *this;
-    }
-
-    std::string author;
-    unsigned short ctr = 0u;
-    unsigned short copy_ctr = 0u;
-    unsigned short move_ctr = 0u;
-    unsigned short copy_asgn = 0u;
-    unsigned short move_asgn = 0u;
-};
-
-// TODO: test suite TEST_P?
-//  class TestConstruction : public testing::Test {
-//  protected:
-
-TEST(TestBookCopyMove, InitializerListConstruct) {
-    std::println(std::cerr, "->Constructing books");
-    TestBook tb1("first");
-    TestBook tb2("second");
-
-    std::println(std::cerr, "->Constructing DB");
-
-    // TODO: should initializer_list copy/move? or just be a const val ref?
-    BookDatabase<std::vector<TestBook>> db{tb1, tb2};
-}
-
-TEST(TestBookCopyMove, PushBack) {
-    std::println(std::cerr, "->Constructing book for push back");
-    TestBook bk("book");
-
-    BookDatabase<std::vector<TestBook>> db;
-    db.PushBack(bk);
-}
-
-TEST(TestBookCopyMove, Emplace) {
-    std::println(std::cerr, "->Constructing book for emplace");
-
-    BookDatabase<std::vector<TestBook>> db;
-    db.EmplaceBack("book");
-}
-
 //====== Edge Cases =======
 TEST(TestDb, StatisticsForEmptyDB) {
     BookDatabase db;
@@ -199,8 +115,8 @@ TEST(TestDb, StatisticsCorrectRatings) {
     EXPECT_EQ(author_histogram.at("George Orwell"sv), 2u);
 
     auto genre_ratings = calculateGenreRatings(db.begin(), db.end());
-    EXPECT_DOUBLE_EQ(genre_ratings.at(Genre::SciFi), 4.450);
-    EXPECT_DOUBLE_EQ(genre_ratings.at(Genre::Fiction), 4.50);
+    EXPECT_DOUBLE_EQ(genre_ratings.at(Genre::SciFi).Average(), 4.450);
+    EXPECT_DOUBLE_EQ(genre_ratings.at(Genre::Fiction).Average(), 4.50);
 
     auto avg_rating = calculateAverageRating(db);
     EXPECT_DOUBLE_EQ(avg_rating, 4.480);
@@ -284,4 +200,102 @@ TEST(TestDb, FiltersCorrect) {
 }
 
 //====== Test with a std::deque =======
-//TODO:
+//TODO: can set this up as test suite with parameters being db_ptr = db<vector> & db<deque> to avoid duplication
+TEST(TestStdDeque, DbInitializerList) {
+    Book book1("1984"s, "George Orwell"sv, 1949, Genre::SciFi, 4., 190);
+    Book book2("Animal Farm"s, "George Orwell"sv, 1945, Genre::Fiction, 4.4, 143);
+    Book book3("The Great Gatsby"s, "F. Scott Fitzgerald"sv, 1925, Genre::Fiction, 4.5, 120);
+
+    BookDatabase<std::deque<Book>> db{book1, book2, book3};
+
+    EXPECT_EQ(db.size(), 3u);
+}
+
+//Leave this disabled, doesn't work when BookDatabase value type is set to Book only
+#ifdef TEST_BOOK_CONSTRUCTION_COPY_MOVE
+
+//====== Book construction and insertion =======
+// Testing book construction, push back and emplace for move/copy
+// TODO: add EXPECT_EQ expected counts for move/copy counts
+struct TestBook {
+    TestBook(std::string author) : author(author) {
+        std::println(std::cerr, " *Book ctr");
+        ++ctr;
+    }
+
+    // copy constructor
+    TestBook(TestBook &other) : author(other.author) {
+        std::println(std::cerr, " *Book COPY ctr");
+        ++copy_ctr;
+    }
+
+    TestBook(const TestBook &other) : author(other.author) {
+        std::println(std::cerr, " *Book C-COPY ctr");
+        ++copy_ctr;
+    }
+
+    // move constructor
+    TestBook(TestBook &&other) noexcept : author(std::move(other.author)) {
+        std::println(std::cerr, " =Book MOVE ctr");
+        ++move_ctr;
+    }
+
+    TestBook &operator=(TestBook &other) {
+        author = other.author;
+        std::println(std::cerr, " **Book COPY ASSIGN");
+        ++copy_asgn;
+        return *this;
+    }
+
+    TestBook &operator=(const TestBook &other) {
+        author = other.author;
+        std::println(std::cerr, " **Book C-COPY ASSIGN");
+        ++copy_asgn;
+        return *this;
+    }
+
+    TestBook &operator=(TestBook &&other) noexcept {
+        author = std::move(other.author);
+        std::println(std::cerr, " ==Book MOVE ASSIGN");
+        ++move_asgn;
+        return *this;
+    }
+
+    std::string author;
+    unsigned short ctr = 0u;
+    unsigned short copy_ctr = 0u;
+    unsigned short move_ctr = 0u;
+    unsigned short copy_asgn = 0u;
+    unsigned short move_asgn = 0u;
+};
+
+// TODO: test suite TEST_P?
+//  class TestConstruction : public testing::Test {
+//  protected:
+
+TEST(TestBookCopyMove, InitializerListConstruct) {
+    std::println(std::cerr, "->Constructing books");
+    TestBook tb1("first");
+    TestBook tb2("second");
+
+    std::println(std::cerr, "->Constructing DB");
+
+    //NB: without ""
+    BookDatabase<std::vector<TestBook>> db{tb1, tb2};
+}
+
+TEST(TestBookCopyMove, PushBack) {
+    std::println(std::cerr, "->Constructing book for push back");
+    TestBook bk("book");
+
+    BookDatabase<std::vector<TestBook>> db;
+    db.PushBack(bk);
+}
+
+TEST(TestBookCopyMove, Emplace) {
+    std::println(std::cerr, "->Constructing book for emplace");
+
+    BookDatabase<std::vector<TestBook>> db;
+    db.EmplaceBack("book");
+}
+#endif
