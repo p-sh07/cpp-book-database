@@ -49,11 +49,13 @@ int main() {
 
     // Author histogram
     auto histogram = buildAuthorHistogramFlat(db);
-    std::print("Author histogram: {}", histogram);
+    //ERR: error: static assertion failed: std::formatter must be specialized for each type being formatted
+    //std::print("Author histogram: {}", histogram);
 
     // Ratings
     auto genreRatings = calculateGenreRatings(db.begin(), db.end());
-    std::print("\n\nAverage ratings by genres: {}\n", genreRatings);
+    //ERR: same as above, no formatter for flat_map in g++ 15 ?s
+    //std::print("\n\nAverage ratings by genres: {}\n", genreRatings);
 
     auto avrRating = calculateAverageRating(db);
     std::print("Average books rating in library: {:.2f}\n", avrRating);

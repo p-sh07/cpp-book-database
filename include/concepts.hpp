@@ -7,8 +7,10 @@
 
 namespace bookdb {
 template <typename It>
-concept BookIterator = std::input_iterator<It>
-    && std::same_as<std::iter_value_t<It>, Book>;
+concept BookIterator = requires (It const &it) {
+    requires std::input_iterator<It>;
+    requires std::same_as<std::iter_value_t<It>, Book>;
+};
 
 template <typename T>
 concept BookContainerLike = requires(T const &c)
@@ -22,7 +24,7 @@ concept BookContainerLike = requires(T const &c)
 
     // has ::value_type, which is book
     typename T::value_type;
-    std::same_as<typename T::value_type, Book>;
+    requires std::same_as<typename T::value_type, Book>;
 };
 
 template <typename S, typename I>

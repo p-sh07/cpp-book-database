@@ -24,7 +24,12 @@ using BookRefVec = std::vector<std::reference_wrapper<const Book>>;
 template <BookContainerLike T, typename Comparator = TransparentStringLess>
 auto buildAuthorHistogramFlat(const BookDatabase<T> &db, Comparator comp = {}) {
     std::flat_map<std::string_view, size_t, Comparator> author_counts;
-    rg::for_each(db.GetBooks(), [&](const auto &book) { ++author_counts[book.author]; });
+    rg::for_each(db.GetBooks(), [&](const auto &book) {
+        //Have to use this variable to avoid compilation error in g++ 15.0.1
+        // /usr/include/c++/15/flat_map:1145:42: error: cannot bind rvalue reference .. to lvalue of type ...      ~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~
+        auto author = book.author;
+        ++author_counts[author]; 
+    });
     return author_counts;
 }
 
@@ -39,14 +44,23 @@ struct GenreInfo {
     }
 };
 
+struct GenreComp {
+    bool operator()(const Genre& lhs, const Genre& rhs) {
+        return lhs < rhs;
+    }
+};
+
 // Average ratings by genres
 template <BookIterator It>
 auto calculateGenreRatings(It begin, It end) {
-    std::flat_map<Genre, GenreInfo> genre_ratings;
+    std::flat_map<Genre, GenreInfo, GenreComp> genre_ratings;
 
     std::for_each(begin, end, [&](const auto &book) {
-        genre_ratings[book.genre].rating_sum += book.rating;
-        ++genre_ratings[book.genre].count;
+        //Same as with authorHistogram flat_map
+        auto genre = book.genre;
+        
+        genre_ratings[genre].rating_sum += book.rating;
+        ++genre_ratings[genre].count;
     });
 
     return genre_ratings;
@@ -97,7 +111,7 @@ auto getTopNBy(BookDatabase<T> &db, size_t nbooks = 0, Comparator comp = {}) {
 namespace std {
 // Formatter для BookRefVec
 template <>
-struct std::formatter<bookdb::BookRefVec, char> {
+struct formatter<bookdb::BookRefVec, char> {
     template <typename FormatContext>
     auto format(const bookdb::BookRefVec &book_vec, FormatContext &fc) const {
         size_t n = 1;
@@ -112,7 +126,7 @@ struct std::formatter<bookdb::BookRefVec, char> {
 };
 
 template <>
-struct std::formatter<bookdb::GenreInfo, char> {
+struct formatter<bookdb::GenreInfo, char> {
     template <typename FormatContext>
     auto format(const bookdb::GenreInfo &gi, FormatContext &fc) const {
         format_to(fc.out(), " Avg. rating = {}\n", gi.Average());

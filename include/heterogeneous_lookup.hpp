@@ -9,10 +9,10 @@ struct TransparentStringLess {
     using is_transparent = void;
 
     bool operator()(const std::string &a, const std::string& b) const { return a < b; }
-    bool operator()(const std::string_view a, const std::string_view b) const { return a < b; }
+    bool operator()(const std::string_view &a, const std::string_view &b) const { return a < b; }
 
-    bool operator()(const std::string &a, const std::string_view b) const { return a < b; }
-    bool operator()(const std::string_view a, const std::string &b) const { return a < b; }
+    bool operator()(const std::string &a, const std::string_view &b) const { return a < b; }
+    bool operator()(const std::string_view &a, const std::string &b) const { return a < b; }
 };
 
 struct TransparentStringEqual {
