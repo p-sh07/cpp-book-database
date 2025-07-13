@@ -1,4 +1,4 @@
-# cpp-middle-project-sprint-3 <!-- omit in toc -->
+--# cpp-middle-project-sprint-3 <!-- omit in toc -->
 
 - [Начало работы](#начало-работы)
 - [Сборка проекта и запуск тестов](#сборка-проекта-и-запуск-тестов)
